@@ -1,10 +1,6 @@
 import { USDC_TOKEN, WETH_TOKEN, ETHER_NATIVE, DAI_TOKEN } from './libs/constants';
 
 export const CurrentConfig = {
-  rpc: {
-    local: 'http://localhost:8545',
-    mainnet: process.env.REACT_APP_MAINNET_RPC_URL,
-  },
   tokens: {
     in: WETH_TOKEN,
     amountIn: 1,
