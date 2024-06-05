@@ -1,70 +1,40 @@
-# Getting Started with Create React App
+### Trading
+### Overview
+This decentralised application (dApp) executes a Uniswap V3 single hop exact-input quoted swap trade (i.e. for ETH to USDC and ETH to DAI) via a wallet connection.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+### Configuration
+Using an in-browser wallet, this application can interact with:
+1. A locally deployed mainnet fork
+2. The mainnet
 
-In the project directory, you can run:
 
-### `npm start`
+### Setup
+### Install dependencies
+1. Run npm install to install the project dependencies
+2. Run npm install:chain to download and install Foundry
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Run your local chain
+1. Create an API key using any of the Ethereum API providers and grab the respective RPC URL, eg https://mainnet.infura.io/v3/0ac57a06f2994538829c14745750d721
+2. Run npm start:chain <api_provider_RPC_URL> in a separate terminal session to start up a copy of the mainnet blockchain locally
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Select your wallet
+For testing on a locally deployed mainnet fork, you can use the first sample wallet offered by Foundry (listed in the terminal output upon starting your local chain). If you'd like to use a different wallet, modify the config's wallet address and privateKey. Note these are not used when configured to use a wallet extension.
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Setup a wallet browser extension
+1. Install a wallet browser extension
+2. Add a new manual/local network to your wallet local chain using http://localhost:8545 for your RPC URL and 1337 for your chain ID, and ETH for your currency.
+3. Import your selected wallet using your private key (e.g. 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 from Foundry's example wallets)
+4. Refer the guidelines to adding a network manually in MetaMask in the following link: https://support.metamask.io/networks-and-sidechains/managing-networks/how-to-add-a-custom-network-rpc/
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Start the web interface
+Run npm start and navigate to http://localhost:3000/
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Long Pending Transaction in MetaMask
+In case, a long pending transaction happens, you may clear activity tab data in MetaMask by following the guidelines in the following link: https://support.metamask.io/managing-my-wallet/resetting-deleting-and-restoring/how-to-clear-your-account-activity-reset-account/
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
