@@ -173,7 +173,7 @@ a {
 }
 
 .article__main {
-    width: 70vw;
+    width: 80vw;
     display: flex;
     align-items: center;
     flex-direction: column;
