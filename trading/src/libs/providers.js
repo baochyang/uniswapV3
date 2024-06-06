@@ -4,6 +4,9 @@ import { CurrentConfig } from '../config'
 import { Web3 } from 'web3';
 
 // Single copies of provider and wallet
+const mainnetProvider = new ethers.providers.JsonRpcProvider(
+  CurrentConfig.rpc.mainnet
+)
 
 const browserExtensionProvider = createBrowserExtensionProvider()
 
@@ -18,6 +21,9 @@ export const TransactionState = {
 }
 
 // Provider and Wallet Functions
+export function getMainnetProvider() {
+  return mainnetProvider
+}
 
 export function getProvider() {
   return browserExtensionProvider

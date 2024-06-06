@@ -25,16 +25,17 @@ import {
 } from './constants'
 
 import { MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS } from './constants'
-import { getPoolInfo } from './pool'
+import { getPoolInfo, getPoolInfoNoWallet } from './pool'
 
 import {
   getProvider,
   getWalletAddress,
   sendTransaction,
   TransactionState,
+  getMainnetProvider,
 } from './providers'
 
-import { fromReadableAmount } from './utils'
+import { fromReadableAmount, toReadableAmount } from './utils'
 import { wrapETH } from './wallet'
 
 export async function createTrade(inputAmountIn) {
@@ -99,6 +100,72 @@ export async function createTrade(inputAmountIn) {
   
   return uncheckedTrade
 }
+
+export async function createTradeNoWallet(inputAmountIn) {
+
+  const poolInfo = await getPoolInfoNoWallet()
+
+  const pool = new Pool(
+    CurrentConfig.tokens.in,
+    getCurrentConfigTokensOut(),
+    CurrentConfig.tokens.poolFee,
+    poolInfo.sqrtPriceX96.toString(),
+    poolInfo.liquidity.toString(),
+    poolInfo.tick
+  )
+
+  const swapRoute = new Route(
+    [pool],
+    CurrentConfig.tokens.in,
+    getCurrentConfigTokensOut()
+  )
+
+  let uncheckedTrade = null
+  if(inputAmountIn){
+    const amountOut = await getOutputQuoteNoWallet(swapRoute, inputAmountIn)
+    const amountOutReadable = toReadableAmount(amountOut.toString(), getCurrentConfigTokensOut().decimals)
+    
+      uncheckedTrade = Trade.createUncheckedTrade({
+      route: swapRoute,
+      inputAmount: CurrencyAmount.fromRawAmount(
+        CurrentConfig.tokens.in,
+        fromReadableAmount(
+          inputAmountIn,
+          CurrentConfig.tokens.in.decimals
+        ).toString()
+      ),
+      outputAmount: CurrencyAmount.fromRawAmount(
+        getCurrentConfigTokensOut(),
+        JSBI.BigInt(amountOut)
+      ),
+      tradeType: TradeType.EXACT_INPUT,
+    })
+
+  } else {
+    const amountOut = 0
+
+      uncheckedTrade = Trade.createUncheckedTrade({
+      route: swapRoute,
+      inputAmount: CurrencyAmount.fromRawAmount(
+        CurrentConfig.tokens.in,
+        fromReadableAmount(
+          0,
+          CurrentConfig.tokens.in.decimals
+        ).toString()
+      ),
+      outputAmount: CurrencyAmount.fromRawAmount(
+        getCurrentConfigTokensOut(),
+        JSBI.BigInt(amountOut)
+      ),
+      tradeType: TradeType.EXACT_INPUT,
+    })
+
+  }
+
+  return uncheckedTrade
+}
+
+
 
 export async function executeTrade(trade) {
   const walletAddress = getWalletAddress()
@@ -168,6 +235,39 @@ async function getOutputQuote(route, inputAmountIn) {
 
   return ethers.utils.defaultAbiCoder.decode(['uint256'], quoteCallReturnData)
 }
+
+
+async function getOutputQuoteNoWallet(route, inputAmountIn) {
+  const provider = getMainnetProvider()
+
+  if (!provider) {
+    throw new Error('Provider required to get pool state')
+  }
+
+  const { calldata } = await SwapQuoter.quoteCallParameters(
+    route,
+    CurrencyAmount.fromRawAmount(
+      CurrentConfig.tokens.in,
+      fromReadableAmount(
+        inputAmountIn,
+        CurrentConfig.tokens.in.decimals
+      ).toString()
+    ),
+    TradeType.EXACT_INPUT,
+    {
+      useQuoterV2: true,
+    }
+  )
+
+  const quoteCallReturnData = await provider.call({
+    to: QUOTER_CONTRACT_ADDRESS,
+    data: calldata,
+  })
+
+  return ethers.utils.defaultAbiCoder.decode(['uint256'], quoteCallReturnData)
+}
+
+
 
 export async function getTokenTransferApproval(
   token

@@ -27,7 +27,7 @@ import {
   amountSlice 
 } from '../libs/providers'
 
-import { createTrade, createAndExecuteTrade} from '../libs/trading'
+import { createTrade, createAndExecuteTrade, createTradeNoWallet} from '../libs/trading'
 
 import { shortenAddress, displayTradeOutputAmount} from '../libs/utils'
 import { getCurrencyBalance, } from '../libs/wallet'
@@ -103,8 +103,18 @@ const UniswapV3 = () => {
     setCurrentConfigTokensOut(tokenType)
     refreshBalances()
     onCreateTrade(inputAmount) 
-    
   }, [inputAmount, onCreateTrade, refreshBalances])
+
+
+const onCreateTradeNoWallet = useCallback(async (keyInAmount) => {
+  setTrade(await createTradeNoWallet(keyInAmount))
+}, [])
+
+const onSetTokensOutNoWallet = useCallback((tokenType) => {
+  setCurrentConfigTokensOut(tokenType)
+  onCreateTradeNoWallet(inputAmount) 
+}, [inputAmount, onCreateTradeNoWallet])
+
 
   const onTrade = useCallback(async () => {
     setTxState(await createAndExecuteTrade(inputAmount))
@@ -177,7 +187,7 @@ const UniswapV3 = () => {
 
               {!getProvider() && (<input className="input" type="number" placeholder="0.00" 
                       inputMode="decimal" 
-                      id="input_amount" onChange={e => {console.log(e.target.value);}}/>)}
+                      id="input_amount" onChange={e => {setInputAmount(e.target.value); onCreateTradeNoWallet(e.target.value);}}/>)}
 
               {getProvider() && (<input className="input" type="number" placeholder="0.00" 
                       inputMode="decimal" 
@@ -250,13 +260,15 @@ const UniswapV3 = () => {
                         <Dropdown.Item>
                           <div className="div__input__img__span">
                               <img src={token_logo[USDC_TOKEN.symbol]} alt={USDC_TOKEN.symbol} width="24px" height="24px" />
-                              <span className="span__input__button__text" onClick={()=>{onSetTokensOut(USDC_TOKEN.symbol)}} >{USDC_TOKEN.symbol}</span>
+                              {!getProvider()&&(<span className="span__input__button__text" onClick={()=>{onSetTokensOutNoWallet(USDC_TOKEN.symbol)}} >{USDC_TOKEN.symbol}</span>)}
+                              {getProvider()&&(<span className="span__input__button__text" onClick={()=>{onSetTokensOut(USDC_TOKEN.symbol)}} >{USDC_TOKEN.symbol}</span>)}
                           </div>
                         </Dropdown.Item>
                         <Dropdown.Item>
                           <div className="div__input__img__span">
                             <img src={token_logo[DAI_TOKEN.symbol]} alt={DAI_TOKEN.symbol} width="24px" height="24px" />
-                            <span className="span__input__button__text" onClick={()=>{onSetTokensOut(DAI_TOKEN.symbol)}} >{DAI_TOKEN.symbol}</span>
+                            {!getProvider()&&(<span className="span__input__button__text" onClick={()=>{onSetTokensOutNoWallet(DAI_TOKEN.symbol)}} >{DAI_TOKEN.symbol}</span>)}
+                            {getProvider()&&(<span className="span__input__button__text" onClick={()=>{onSetTokensOut(DAI_TOKEN.symbol)}} >{DAI_TOKEN.symbol}</span>)}
                           </div>
                         </Dropdown.Item>
                       </Dropdown.List>

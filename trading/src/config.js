@@ -1,6 +1,9 @@
 import { USDC_TOKEN, WETH_TOKEN, ETHER_NATIVE, DAI_TOKEN } from './libs/constants';
 
 export const CurrentConfig = {
+  rpc: {
+    mainnet: 'https://1rpc.io/eth',
+  },
   tokens: {
     in: WETH_TOKEN,
     amountIn: 1,
