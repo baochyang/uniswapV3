@@ -2,7 +2,7 @@
 
 A collection of decentralised applications (dApp), smart contracts and  backend applications based on Uniswap V3.
 
-# Project Folder Chronology
+# Project folder chronology
 1. trading: Single Hop Swap Trade
 
 # URLs
