@@ -36,8 +36,8 @@ Run npm start and navigate to http://localhost:3000/
 
 
 ### Long Pending Transaction in MetaMask
-In case, a long pending transaction happens, you may clear activity tab data in MetaMask by following the guidelines in the following link: https://support.metamask.io/managing-my-wallet/resetting-deleting-and-restoring/how-to-clear-your-account-activity-reset-account/
+In case, a long pending transaction happens, you may clear activity tab data in MetaMask as detailed in the link: https://support.metamask.io/managing-my-wallet/resetting-deleting-and-restoring/how-to-clear-your-account-activity-reset-account/
 
 
 ### dApp URL
-The URL of this dApp is: https://uniswap-v3-trading.vercel.app/
+The URL for this dApp: https://uniswap-v3-trading.vercel.app/
