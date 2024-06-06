@@ -227,7 +227,9 @@ const UniswapV3 = () => {
 
               <div className="div__output">
 
-                {!trade && <span className="span__output" id="deposit_balance">0.00</span>}
+              {!trade && (<input className="input" type="number" placeholder="0.00" 
+                      inputMode="decimal" 
+                      id="input_amount" onChange={e => {console.log(e.target.value)}}/>)}
 
                 {trade &&<input className="input" type="number" placeholder={trade && amountSlice(displayTradeOutputAmount(trade))}
                       inputMode="decimal" 
