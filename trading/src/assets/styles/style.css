@@ -451,10 +451,10 @@ input[type=number] {
 }
 
  
-/* On screens that are 750px or less, set width to 80vw */
+/* On screens that are 750px or less, set width to 75vw */
 @media screen and (max-width: 750px) {
     .article__main {
-        width: 80vw; 
+        width: 75vw; 
     }
   }
     
