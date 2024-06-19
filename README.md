@@ -4,6 +4,9 @@ A collection of decentralised applications (dApp), smart contracts and  backend 
 
 # Project folder chronology
 1. trading: Single Hop Swap Trade
+2. contracts:
+    a. SingleHopSwap
+    b. MultiHopSwap
 
 # URLs
 1. Single Hop Swap Trade: https://uniswap-v3-trading.vercel.app/
