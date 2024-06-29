@@ -69,7 +69,7 @@ describe('UniSwapV3', async () =>  {
     describe("SingleHopSwap", function () {
 
         
-        it("SwapExactInput", async function () {
+        it("SwapExactInput, should get DAI from the exact WETH input", async function () {
 
             /////////////////////////////////////////////////
             ///  This swap provides an exact input of 1 ETH 
@@ -157,7 +157,7 @@ describe('UniSwapV3', async () =>  {
             expect(dai1).to.be.gt(dai0);
         });
 
-        it("SwapExactOutput", async function () {
+        it("SwapExactOutput, should get the exact amount of DAI requested and get back excess WETH paid", async function () {
 
             /////////////////////////////////////////////////
             ///  This swap calls for an exact output of 

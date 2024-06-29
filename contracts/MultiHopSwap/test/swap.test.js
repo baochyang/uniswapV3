@@ -70,7 +70,7 @@ describe('UniSwapV3', async () =>  {
     describe("MultiHopSwapV1", function () {
 
         
-        it("SwapExactInputV1", async function () {
+        it("SwapExactInputV1, should get DAI from the exact WETH input", async function () {
 
             /////////////////////////////////////////////////
             ///  This swap provides an exact input of 1 ETH 
@@ -161,7 +161,7 @@ describe('UniSwapV3', async () =>  {
             expect(dai1).to.be.gt(dai0);
         });
 
-        it("SwapExactOutputV1", async function () {
+        it("SwapExactOutputV1, should get the exact amount of DAI requested and get back excess WETH paid", async function () {
 
             /////////////////////////////////////////////////
             ///  This swap calls for an exact output of 
@@ -261,7 +261,7 @@ describe('UniSwapV3', async () =>  {
     describe("MultiHopSwapV2", function () {
 
         
-        it("SwapExactInputV2", async function () {
+        it("SwapExactInputV2, should get DAI from the exact WETH input", async function () {
 
             /////////////////////////////////////////////////
             ///  This swap provides an exact input of 1 ETH 
@@ -352,7 +352,7 @@ describe('UniSwapV3', async () =>  {
             expect(dai1).to.be.gt(dai0);
         });
 
-        it("SwapExactOutputV2", async function () {
+        it("SwapExactOutputV2, should get the exact amount of DAI requested and get back excess WETH paid", async function () {
 
             /////////////////////////////////////////////////
             ///  This swap calls for an exact output of 
