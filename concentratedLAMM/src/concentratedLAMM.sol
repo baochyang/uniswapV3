@@ -6,13 +6,62 @@ pragma solidity 0.8.27;
 // contracts/UniswapV3Pool.sol
 
 import "./lib/Tick.sol";
+import "./lib/TickMath.sol";
 import "./lib/Position.sol";
 import "./lib/SafeCast.sol";
 import "./interfaces/IERC20.sol";
 
+//------------------------
+// let tick = -200697;
+// let p = 1.0001**tick;
+
+// ## token0 = ETH;
+// let decimals_0 = 1e18;
+// ## token1 = USDC;
+// let decimals_1 = 1e6;
+// p*decimals_0/decimals_1
+// p = 1.9243135e-9
+// p*decimals_0/decimals_1 = 1924.3135
+//------------------------
+
+// slot 0 = 32 bytes
+// 2**256 = 32 bytes
+
+struct Slot0 {
+        // the current price
+        uint160 sqrtPriceX96;
+        // the current tick
+        int24 tick;
+        // // the most-recently updated index of the observations array
+        // uint16 observationIndex;
+        // // the current maximum number of observations that are being stored
+        // uint16 observationCardinality;
+        // // the next maximum number of observations to store, triggered in observations.write
+        // uint16 observationCardinalityNext;
+        // the current protocol fee as a percentage of the swap fee taken on withdrawal
+        // //  represented as an integer denominator (1/x)%
+        // uint8 feeProtocol;
+        // whether the pool is locked
+        bool unlocked;
+    }
+
+// /// @dev Common checks for valid tick inputs.
+// function checkTicks(int24 tickLower, int24 tickUpper) private pure {
+function checkTicks(int24 tickLower, int24 tickUpper) pure {
+        require(tickLower < tickUpper, 'TLU');
+        require(tickLower >= TickMath.MIN_TICK, 'TLM');
+        require(tickUpper <= TickMath.MAX_TICK, 'TUM');
+    }
+
+    // Tick bitmap is used to get the next tick when we do a swap
+
 contract concentratedLAMM {
 
     using SafeCast for int256;
+    using Position for mapping(bytes32 => Position.Info);
+    using Position for Position.Info;
+    using Tick for mapping(int24 => Tick.Info);
+
 
     // /// @inheritdoc IUniswapV3PoolImmutables
     // address public immutable override factory;
@@ -42,26 +91,12 @@ contract concentratedLAMM {
     // /// @inheritdoc IUniswapV3PoolState
     // uint128 public override liquidity;
 
-    struct Slot0 {
-        // the current price
-        uint160 sqrtPriceX96;
-        // the current tick
-        int24 tick;
-        // // the most-recently updated index of the observations array
-        // uint16 observationIndex;
-        // // the current maximum number of observations that are being stored
-        // uint16 observationCardinality;
-        // // the next maximum number of observations to store, triggered in observations.write
-        // uint16 observationCardinalityNext;
-        // the current protocol fee as a percentage of the swap fee taken on withdrawal
-        // //  represented as an integer denominator (1/x)%
-        // uint8 feeProtocol;
-        // whether the pool is locked
-        bool unlocked;
-    }
+    
     // /// @inheritdoc IUniswapV3PoolState
     // Slot0 public override slot0;
     Slot0 public slot0;
+
+    mapping(int24 => Tick.Info) public ticks; // TODO
 
     // /// @inheritdoc IUniswapV3PoolState
     // mapping(bytes32 => Position.Info) public override positions;
@@ -98,7 +133,7 @@ contract concentratedLAMM {
     }
 
     // /// @inheritdoc IUniswapV3PoolActions
-    /// @dev not locked because it initializes unlocked
+    // /// @dev not locked because it initializes unlocked
     // function initialize(uint160 sqrtPriceX96) external override {
     function initialize(uint160 sqrtPriceX96) external {
         // require(slot0.sqrtPriceX96 == 0, 'AI');
@@ -120,17 +155,107 @@ contract concentratedLAMM {
 
         // emit Initialize(sqrtPriceX96, tick);
 
+        // -------------------
         // let sqrt_price_x_96 = 3443439269043970780644209
         // let q=2**96
         // let p=(sqrt_price_x_96/q)**2
         // p*1e18/1e6 = 1888.9727296834467
         
+        // -------------------
         // import math
         // sqrt_price_x_96 = 3436899527919986964832931
         // q=2**96
         // tick = -200921
         // tick = 2*math.log(sqrt_price_x_96/q)/math.log(1.0001)
         // tick = -200920.392088956
+        // -------------------
+    }
+
+    // /// @dev Gets and updates a position with the given liquidity delta
+    // /// @param owner the owner of the position
+    // /// @param tickLower the lower tick of the position's tick range
+    // /// @param tickUpper the upper tick of the position's tick range
+    // /// @param tick the current tick, passed to avoid sloads
+    function _updatePosition(
+        address owner,
+        int24 tickLower,
+        int24 tickUpper,
+        int128 liquidityDelta,
+        int24 tick
+    ) private returns (Position.Info storage position) {
+        position = positions.get(owner, tickLower, tickUpper);
+
+        // uint256 _feeGrowthGlobal0X128 = feeGrowthGlobal0X128; // SLOAD for gas optimization
+        // uint256 _feeGrowthGlobal1X128 = feeGrowthGlobal1X128; // SLOAD for gas optimization
+        uint256 _feeGrowthGlobal0X128 = 0;
+        uint256 _feeGrowthGlobal1X128 = 0;
+
+        // if we need to update the ticks, do it
+        bool flippedLower;
+        bool flippedUpper;
+        if (liquidityDelta != 0) {
+            // uint32 time = _blockTimestamp();
+            // (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) =
+            //     observations.observeSingle(
+            //         time,
+            //         0,
+            //         slot0.tick,
+            //         slot0.observationIndex,
+            //         liquidity,
+            //         slot0.observationCardinality
+            //     );
+
+            flippedLower = ticks.update(
+                tickLower,
+                tick,
+                liquidityDelta,
+                _feeGrowthGlobal0X128,
+                _feeGrowthGlobal1X128,
+                // secondsPerLiquidityCumulativeX128,
+                // tickCumulative,
+                // time,
+                false,
+                maxLiquidityPerTick
+            );
+
+            flippedUpper = ticks.update(
+                tickUpper,
+                tick,
+                liquidityDelta,
+                _feeGrowthGlobal0X128,
+                _feeGrowthGlobal1X128,
+                // secondsPerLiquidityCumulativeX128,
+                // tickCumulative,
+                // time,
+                true,
+                maxLiquidityPerTick
+            );
+
+            // tickBitmap is used to get the next tick when we do a swap
+
+            // if (flippedLower) {
+            //     tickBitmap.flipTick(tickLower, tickSpacing);
+            // }
+            // if (flippedUpper) {
+            //     tickBitmap.flipTick(tickUpper, tickSpacing);
+            // }
+        }
+
+        // (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
+        //     ticks.getFeeGrowthInside(tickLower, tickUpper, tick, _feeGrowthGlobal0X128, _feeGrowthGlobal1X128);
+
+        // position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
+        position.update(liquidityDelta, 0, 0);
+
+        // clear any tick data that is no longer needed
+        if (liquidityDelta < 0) {
+            if (flippedLower) {
+                ticks.clear(tickLower);
+            }
+            if (flippedUpper) {
+                ticks.clear(tickUpper);
+            }
+        }
     }
 
     struct ModifyPositionParams {
@@ -157,19 +282,21 @@ contract concentratedLAMM {
             int256 amount1
         )
     {
+        
+        checkTicks(params.tickLower, params.tickUpper);
+
+        Slot0 memory _slot0 = slot0; // SLOAD for gas optimization
+        // Reading from Storage costs a lot of gas
+
+        position = _updatePosition(
+            params.owner,
+            params.tickLower,
+            params.tickUpper,
+            params.liquidityDelta,
+            _slot0.tick
+        );
+
         return(positions[bytes32(0)], 0, 0);
-
-        // checkTicks(params.tickLower, params.tickUpper);
-
-        // Slot0 memory _slot0 = slot0; // SLOAD for gas optimization
-
-        // position = _updatePosition(
-        //     params.owner,
-        //     params.tickLower,
-        //     params.tickUpper,
-        //     params.liquidityDelta,
-        //     _slot0.tick
-        // );
 
         // if (params.liquidityDelta != 0) {
         //     if (_slot0.tick < params.tickLower) {
