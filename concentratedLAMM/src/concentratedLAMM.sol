@@ -10,6 +10,7 @@ import "./lib/TickMath.sol";
 import "./lib/Position.sol";
 import "./lib/SafeCast.sol";
 import "./interfaces/IERC20.sol";
+import "./lib/SqrtPriceMath.sol";
 
 //------------------------
 // let tick = -200697;
@@ -95,6 +96,8 @@ contract concentratedLAMM {
     // /// @inheritdoc IUniswapV3PoolState
     // Slot0 public override slot0;
     Slot0 public slot0;
+
+    uint128 public liquidity;
 
     mapping(int24 => Tick.Info) public ticks; // TODO
 
@@ -275,6 +278,8 @@ contract concentratedLAMM {
     // /// @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
     
     // function _modifyPosition(ModifyPositionParams memory params) private noDelegateCall
+    // takes in liquidity delta, params.liquidityDelta
+    // https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/SqrtPriceMath.sol, getAmount0Delta, getAmount1Delta
     function _modifyPosition(ModifyPositionParams memory params) private 
         returns (
             Position.Info storage position,
@@ -282,6 +287,8 @@ contract concentratedLAMM {
             int256 amount1
         )
     {
+
+        // returns amount0 or amount1, either to be added or removed
         
         checkTicks(params.tickLower, params.tickUpper);
 
@@ -296,53 +303,74 @@ contract concentratedLAMM {
             _slot0.tick
         );
 
-        return(positions[bytes32(0)], 0, 0);
+        // Get amount 0 and amount 1
+        // token 1 | token 0
+        // --------|---------
+        //        tick
 
-        // if (params.liquidityDelta != 0) {
-        //     if (_slot0.tick < params.tickLower) {
-        //         // current tick is below the passed range; liquidity can only become in range by crossing from left to
-        //         // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
-        //         amount0 = SqrtPriceMath.getAmount0Delta(
-        //             TickMath.getSqrtRatioAtTick(params.tickLower),
-        //             TickMath.getSqrtRatioAtTick(params.tickUpper),
-        //             params.liquidityDelta
-        //         );
-        //     } else if (_slot0.tick < params.tickUpper) {
-        //         // current tick is inside the passed range
-        //         uint128 liquidityBefore = liquidity; // SLOAD for gas optimization
+        if (params.liquidityDelta != 0) {
+            if (_slot0.tick < params.tickLower) {
 
-        //         // write an oracle entry
-        //         (slot0.observationIndex, slot0.observationCardinality) = observations.write(
-        //             _slot0.observationIndex,
-        //             _blockTimestamp(),
-        //             _slot0.tick,
-        //             liquidityBefore,
-        //             _slot0.observationCardinality,
-        //             _slot0.observationCardinalityNext
-        //         );
+                // Calculate amount 0
+                
+                // current tick is below the passed range; liquidity can only become in range by crossing from left to
+                // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
+                
+                amount0 = SqrtPriceMath.getAmount0Delta(
+                    TickMath.getSqrtRatioAtTick(params.tickLower),
+                    TickMath.getSqrtRatioAtTick(params.tickUpper),
+                    params.liquidityDelta
+                );
+            } else if (_slot0.tick < params.tickUpper) {
 
-        //         amount0 = SqrtPriceMath.getAmount0Delta(
-        //             _slot0.sqrtPriceX96,
-        //             TickMath.getSqrtRatioAtTick(params.tickUpper),
-        //             params.liquidityDelta
-        //         );
-        //         amount1 = SqrtPriceMath.getAmount1Delta(
-        //             TickMath.getSqrtRatioAtTick(params.tickLower),
-        //             _slot0.sqrtPriceX96,
-        //             params.liquidityDelta
-        //         );
+                // Calculate amount 0 and amount 1
+                
+                // // current tick is inside the passed range
+                // uint128 liquidityBefore = liquidity; // SLOAD for gas optimization
 
-        //         liquidity = LiquidityMath.addDelta(liquidityBefore, params.liquidityDelta);
-        //     } else {
-        //         // current tick is above the passed range; liquidity can only become in range by crossing from right to
-        //         // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
-        //         amount1 = SqrtPriceMath.getAmount1Delta(
-        //             TickMath.getSqrtRatioAtTick(params.tickLower),
-        //             TickMath.getSqrtRatioAtTick(params.tickUpper),
-        //             params.liquidityDelta
-        //         );
-        //     }
-        // }
+                // // write an oracle entry
+                // (slot0.observationIndex, slot0.observationCardinality) = observations.write(
+                //     _slot0.observationIndex,
+                //     _blockTimestamp(),
+                //     _slot0.tick,
+                //     liquidityBefore,
+                //     _slot0.observationCardinality,
+                //     _slot0.observationCardinalityNext
+                // );
+
+                amount0 = SqrtPriceMath.getAmount0Delta(
+                    _slot0.sqrtPriceX96,
+                    TickMath.getSqrtRatioAtTick(params.tickUpper),
+                    params.liquidityDelta
+                );
+                amount1 = SqrtPriceMath.getAmount1Delta(
+                    TickMath.getSqrtRatioAtTick(params.tickLower),
+                    _slot0.sqrtPriceX96,
+                    params.liquidityDelta
+                );
+
+                // liquidity = LiquidityMath.addDelta(liquidityBefore, params.liquidityDelta);
+                liquidity = params.liquidityDelta < 0
+                            ? liquidity - uint128(-params.liquidityDelta)
+                            : liquidity + uint128(params.liquidityDelta);
+
+            } else {
+
+                // Calculate amount 1
+
+                // _slot0.tick >= params.tickUpper
+
+                // current tick is above the passed range; liquidity can only become in range by crossing from right to
+                // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
+                amount1 = SqrtPriceMath.getAmount1Delta(
+                    TickMath.getSqrtRatioAtTick(params.tickLower),
+                    TickMath.getSqrtRatioAtTick(params.tickUpper),
+                    params.liquidityDelta
+                );
+            }
+        }
+
+        // return(positions[bytes32(0)], 0, 0);
     }
 
 
