@@ -428,4 +428,47 @@ contract concentratedLAMM {
 
 
 
+    function collect() external {}
+
+    // burn -----------------------
+
+    // uint128 amount is the amount of liquidity to burn
+    // uint256 amount0 and uint256 amount1 tokens to return
+
+    // lock is the Re-entrancy prevention modifier
+
+    // liquidity Delta is the amount of liquidity, we will be removing
+
+    // notice that burn() does not transfer any tokens, only update positions
+
+    function burn(int24 tickLower, int24 tickUpper, uint128 amount) 
+        external 
+        lock
+        returns (uint256 amount0, uint256 amount1) 
+    {
+
+        // Because liquidityDelta is negative, hence, int256 amount0Int and
+        // int256 amount1Int will be negative
+        (Position.Info storage position, int256 amount0Int, int256 amount1Int)= 
+        _modifyPosition(
+            ModifyPositionParams({
+                owner: msg.sender,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                liquidityDelta: -int256(uint256(amount)).toInt128()
+        }));
+
+        // Since, int256 amount0Int and int256 amount1Int are negative values, hence:
+        amount0 = uint256(-amount0Int);
+        amount1 = uint256(-amount1Int);
+
+        if (amount0 > 0 || amount1 > 0) {
+            (position.tokensOwed0, position.tokensOwed1) = (
+                position.tokensOwed0 + uint128(amount0),
+                position.tokensOwed1 + uint128(amount1)
+            );
+        }
+    }
+
+
 }
