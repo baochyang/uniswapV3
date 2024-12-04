@@ -11,6 +11,7 @@ import "./lib/Position.sol";
 import "./lib/SafeCast.sol";
 import "./interfaces/IERC20.sol";
 import "./lib/SqrtPriceMath.sol";
+import "./lib/SwapMath.sol";
 
 //------------------------
 // let tick = -200697;
@@ -426,9 +427,47 @@ contract concentratedLAMM {
         // emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
     }
 
+    // collect -------------------
+    // 1. burn() to remove liquidity and then update the amount of tokensOwed to our position, however,
+    // the tokens are not transferred. To transfer the token, we call collect()
+    // 
+    // collect(): actual transfer of token
+    // /// @inherit IUniswapV3PoolActions
+    function collect(
+        address recipient,
+        int24 tickLower,
+        int24 tickUpper,
+        uint128 amount0Requested,
+        uint128 amount1Requested
+    ) external lock returns (uint128 amount0, uint128 amount1){
+        // we don't need to checkTicks here, because invalid
+        // positions will never have non-zero tokensOwed{0,1}
 
+        Position.Info storage position = positions.get(msg.sender, tickLower, tickUpper);
 
-    function collect() external {}
+        // min(amount owed, amount request)
+        amount0 = amount0Requested > position.tokensOwed0 ? position.tokensOwed0 : amount0Requested;
+        amount1 = amount1Requested > position.tokensOwed1 ? position.tokensOwed1 : amount1Requested;
+
+        // console.log("Amount 0", amount0, IERC20(token0).balanceOf(address(this)));
+        // console.log("Amount 1", amount1, IERC20(token1).balanceOf(address(this)));
+
+        if(amount0 > 0){
+            position.tokensOwed0 -= amount0; // update position
+            // TransferHelper.safeTransfer(token0, recipient, amount0); 
+            // TransferHelper is related to returning a boolean after token transfer
+            IERC20(token0).transfer(recipient, amount0);
+        }
+
+        if(amount1 > 0){
+            position.tokensOwed1 -= amount1; // update position
+            // TransferHelper.safeTransfer(token1, recipient, amount1);
+            IERC20(token1).transfer(recipient, amount1);
+        }
+
+        // emit Collect(msg.sender, recipient, tickLower, tickUpper, amount0, amount1);
+
+    }
 
     // burn -----------------------
 
@@ -469,6 +508,16 @@ contract concentratedLAMM {
             );
         }
     }
+
+    // uniswapV3 Pool
+    // swap()
+    // SwapMath.computeSwapStep; compute 
+    // state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount
+    // compute the amount of tokens that need to go in, the
+    // amount of tokens that need to go out and the swap fee
+
+
+
 
 
 }
